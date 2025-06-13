@@ -35,7 +35,7 @@ public class Board {
 
     private void handleClick(int i, int j) {
         box clickedBox = x[i][j];
-
+        box initialBox = x[i][j];
         // First click: select piece
         if (selectedBox == null) {
             if (clickedBox.piece != null) {
@@ -49,54 +49,91 @@ public class Board {
                 if(moveValid(clickedBox,selectedBox)){
                     clickedBox.setPiece(selectedBox.piece);
                      selectedBox.setPiece(null);
-
-                // Restore original background
+                    
+                }else{
+                    clickedBox = initialBox;
+                }
+            }
+                 // Restore original background
                 int sx = selectedBox.getY() / box.HEIGHT;
                 int sy = selectedBox.getX() / box.WIDTH;
                 Color original = ((sx + sy) % 2 == 0) ?
                     new Color(240, 217, 181) :
                     new Color(181, 136, 99);
                 selectedBox.setBackground(original);
-                }
-                
-               
-            }
-
-            selectedBox = null; 
+            
+            selectedBox = null;
+            
         }
     }
+
+
+
     // Move Logic
     private boolean moveValid(box clickedBox, box selectedBox2) {
         if (selectedBox2.piece == null) return false;
-
-    String type = selectedBox2.piece.getType();
-    if (!type.equals("pawn")) return false;
 
     int startX = selectedBox2.getY() / box.HEIGHT;
     int startY = selectedBox2.getX() / box.WIDTH;
     int endX = clickedBox.getY() / box.HEIGHT;
     int endY = clickedBox.getX() / box.WIDTH;
+    Ccolor SourceColor = selectedBox2.piece.getColor();
+    Ccolor DestinationColor = (clickedBox.piece != null) ? clickedBox.piece.getColor() : null;
+    String type = selectedBox2.piece.getType();
 
-    Ccolor color = selectedBox2.piece.getColor();
-    int direction = (color == Ccolor.WHITE) ? -1 : 1;
+    //move logic according to material type
 
-    // Normal move forward
-    if (startY == endY && clickedBox.piece == null) {
-        if (endX == startX + direction) {
-            return true;
-        }
-        // Two-step move from initial row
-        if ((color == Ccolor.WHITE && startX == 6 || color == Ccolor.BLACK && startX == 1) &&
-            endX == startX + 2 * direction && x[startX + direction][startY].piece == null) {
-            return true;
-        }
+    // pawn
+    if (type.equals("pawn")){
+            int direction = (SourceColor == Ccolor.WHITE) ? -1 : 1;
+
+            // Normal move forward
+            if (startY == endY && clickedBox.piece == null) {
+                if (endX == startX + direction) {
+                    return true;
+                }
+                // Two-step move from initial row
+                if ((SourceColor == Ccolor.WHITE && startX == 6 || SourceColor == Ccolor.BLACK && startX == 1) &&
+                    endX == startX + 2 * direction && x[startX + direction][startY].piece == null) {
+                    return true;
+                }
+            }
+
+            // Diagonal capture
+            if (Math.abs(endY - startY) == 1 && endX == startX + direction &&
+                clickedBox.piece != null && clickedBox.piece.getColor() != SourceColor) {
+                return true;
+            }
     }
+    
+    // rook
 
-    // Diagonal capture
-    if (Math.abs(endY - startY) == 1 && endX == startX + direction &&
-        clickedBox.piece != null && clickedBox.piece.getColor() != color) {
-        return true;
+   if (type.equals("rook")) {
+    if ((startX == endX || startY == endY) && (clickedBox.piece == null || SourceColor != DestinationColor)) {
+
+        // Horizontal movement 
+        if (startX == endX) {
+            int step = (endY > startY) ? 1 : -1;
+            for (int y = startY + step; y != endY; y += step) {
+                if (x[startX][y].piece != null) return false; 
+            }
+        }
+
+        // Vertical movement 
+        if (startY == endY) {
+            int step = (endX > startX) ? 1 : -1;
+            for (int xRow = startX + step; xRow != endX; xRow += step) {
+                if (x[xRow][startY].piece != null) return false; 
+            }
+        }
+
+        return true; 
     }
+}
+
+
+    
+    
 
         return false;
     }

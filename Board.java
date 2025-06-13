@@ -1,23 +1,107 @@
 import java.awt.Color;
-public class Board {
-    box x[][];
-    Board(){
-        x = new box[8][8];
-       for (int i = 0; i < 8; i++) {
-            for (int j = 0; j < 8; j++) {
-            x[i][j] = new box(j * box.WIDTH, i * box.HEIGHT);
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
-        if ((i + j) % 2 == 0) {
-            x[i][j].setBackground(new Color(240, 217, 181));
-        } else {
-            x[i][j].setBackground(new Color(181, 136, 99));
+public class Board {
+    box[][] x;
+    box selectedBox = null; 
+
+    Board() {
+        x = new box[8][8];
+
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                x[i][j] = new box(j * box.WIDTH, i * box.HEIGHT);
+
+                if ((i + j) % 2 == 0) {
+                    x[i][j].setBackground(new Color(240, 217, 181));
+                } else {
+                    x[i][j].setBackground(new Color(181, 136, 99));
+                }
+                x[i][j].setOpaque(true);
+
+                // Attach click listener
+                int finalI = i;
+                int finalJ = j;
+                x[i][j].addMouseListener(new MouseAdapter() {
+                    public void mouseClicked(MouseEvent e) {
+                        handleClick(finalI, finalJ);
+                    }
+                });
+            }
         }
-        x[i][j].setOpaque(true);
+        setupInitialPieces();
+    }
+
+    private void handleClick(int i, int j) {
+        box clickedBox = x[i][j];
+
+        // First click: select piece
+        if (selectedBox == null) {
+            if (clickedBox.piece != null) {
+                selectedBox = clickedBox;
+                clickedBox.setBackground(Color.YELLOW); //highlight
+            }
+        } 
+        // Second click: move piece
+        else {
+            if (clickedBox != selectedBox) {
+                if(moveValid(clickedBox,selectedBox)){
+                    clickedBox.setPiece(selectedBox.piece);
+                     selectedBox.setPiece(null);
+
+                // Restore original background
+                int sx = selectedBox.getY() / box.HEIGHT;
+                int sy = selectedBox.getX() / box.WIDTH;
+                Color original = ((sx + sy) % 2 == 0) ?
+                    new Color(240, 217, 181) :
+                    new Color(181, 136, 99);
+                selectedBox.setBackground(original);
+                }
+                
+               
+            }
+
+            selectedBox = null; 
         }
     }
-    setupInitialPieces();
+    // Move Logic
+    private boolean moveValid(box clickedBox, box selectedBox2) {
+        if (selectedBox2.piece == null) return false;
+
+    String type = selectedBox2.piece.getType();
+    if (!type.equals("pawn")) return false;
+
+    int startX = selectedBox2.getY() / box.HEIGHT;
+    int startY = selectedBox2.getX() / box.WIDTH;
+    int endX = clickedBox.getY() / box.HEIGHT;
+    int endY = clickedBox.getX() / box.WIDTH;
+
+    Ccolor color = selectedBox2.piece.getColor();
+    int direction = (color == Ccolor.WHITE) ? -1 : 1;
+
+    // Normal move forward
+    if (startY == endY && clickedBox.piece == null) {
+        if (endX == startX + direction) {
+            return true;
+        }
+        // Two-step move from initial row
+        if ((color == Ccolor.WHITE && startX == 6 || color == Ccolor.BLACK && startX == 1) &&
+            endX == startX + 2 * direction && x[startX + direction][startY].piece == null) {
+            return true;
+        }
     }
-     private void setupInitialPieces() {
+
+    // Diagonal capture
+    if (Math.abs(endY - startY) == 1 && endX == startX + direction &&
+        clickedBox.piece != null && clickedBox.piece.getColor() != color) {
+        return true;
+    }
+
+        return false;
+    }
+
+    private void setupInitialPieces() {
         x[0][0].setPiece(new Materials(Pieces.ROOK2));
         x[0][1].setPiece(new Materials(Pieces.KNIGHT2));
         x[0][2].setPiece(new Materials(Pieces.BISHOP2));

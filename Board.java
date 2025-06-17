@@ -4,7 +4,7 @@ import java.awt.event.MouseEvent;
 
 public class Board {
     box[][] x;
-    box selectedBox = null; 
+    box selectedBox = null;
 
     Board() {
         x = new box[8][8];
@@ -20,7 +20,7 @@ public class Board {
                 }
                 x[i][j].setOpaque(true);
 
-                // Attach click listener
+                // click listener
                 int finalI = i;
                 int finalJ = j;
                 x[i][j].addMouseListener(new MouseAdapter() {
@@ -40,51 +40,50 @@ public class Board {
         if (selectedBox == null) {
             if (clickedBox.piece != null) {
                 selectedBox = clickedBox;
-                clickedBox.setBackground(Color.YELLOW); //highlight
+                clickedBox.setBackground(Color.YELLOW); // highlight
+
             }
-        } 
+        }
         // Second click: move piece
         else {
             if (clickedBox != selectedBox) {
-                if(moveValid(clickedBox,selectedBox)){
+                if (moveValid(clickedBox, selectedBox)) {
                     clickedBox.setPiece(selectedBox.piece);
-                     selectedBox.setPiece(null);
-                    
-                }else{
+                    selectedBox.setPiece(null);
+
+                } else {
                     clickedBox = initialBox;
+                    System.out.println("Invalid Move!!");
                 }
             }
-                 // Restore original background
-                int sx = selectedBox.getY() / box.HEIGHT;
-                int sy = selectedBox.getX() / box.WIDTH;
-                Color original = ((sx + sy) % 2 == 0) ?
-                    new Color(240, 217, 181) :
-                    new Color(181, 136, 99);
-                selectedBox.setBackground(original);
-            
+            // Restore original background
+            int sx = selectedBox.getY() / box.HEIGHT;
+            int sy = selectedBox.getX() / box.WIDTH;
+            Color original = ((sx + sy) % 2 == 0) ? new Color(240, 217, 181) : new Color(181, 136, 99);
+            selectedBox.setBackground(original);
+
             selectedBox = null;
-            
+
         }
     }
 
-
-
     // Move Logic
     private boolean moveValid(box clickedBox, box selectedBox2) {
-        if (selectedBox2.piece == null) return false;
+        if (selectedBox2.piece == null)
+            return false;
 
-    int startX = selectedBox2.getY() / box.HEIGHT;
-    int startY = selectedBox2.getX() / box.WIDTH;
-    int endX = clickedBox.getY() / box.HEIGHT;
-    int endY = clickedBox.getX() / box.WIDTH;
-    Ccolor SourceColor = selectedBox2.piece.getColor();
-    Ccolor DestinationColor = (clickedBox.piece != null) ? clickedBox.piece.getColor() : null;
-    String type = selectedBox2.piece.getType();
+        int startX = selectedBox2.getY() / box.HEIGHT;
+        int startY = selectedBox2.getX() / box.WIDTH;
+        int endX = clickedBox.getY() / box.HEIGHT;
+        int endY = clickedBox.getX() / box.WIDTH;
+        Ccolor SourceColor = selectedBox2.piece.getColor();
+        Ccolor DestinationColor = (clickedBox.piece != null) ? clickedBox.piece.getColor() : null;
+        String type = selectedBox2.piece.getType();
 
-    //move logic according to material type
+        // move logic according to material type
 
-    // pawn
-    if (type.equals("pawn")){
+        // pawn
+        if (type.equals("pawn")) {
             int direction = (SourceColor == Ccolor.WHITE) ? -1 : 1;
 
             // Normal move forward
@@ -94,47 +93,127 @@ public class Board {
                 }
                 // Two-step move from initial row
                 if ((SourceColor == Ccolor.WHITE && startX == 6 || SourceColor == Ccolor.BLACK && startX == 1) &&
-                    endX == startX + 2 * direction && x[startX + direction][startY].piece == null) {
+                        endX == startX + 2 * direction && x[startX + direction][startY].piece == null) {
                     return true;
                 }
             }
 
             // Diagonal capture
             if (Math.abs(endY - startY) == 1 && endX == startX + direction &&
-                clickedBox.piece != null && clickedBox.piece.getColor() != SourceColor) {
+                    clickedBox.piece != null && clickedBox.piece.getColor() != SourceColor) {
                 return true;
             }
-    }
-    
-    // rook
+        }
 
-   if (type.equals("rook")) {
-    if ((startX == endX || startY == endY) && (clickedBox.piece == null || SourceColor != DestinationColor)) {
+        // rook
 
-        // Horizontal movement 
-        if (startX == endX) {
-            int step = (endY > startY) ? 1 : -1;
-            for (int y = startY + step; y != endY; y += step) {
-                if (x[startX][y].piece != null) return false; 
+        if (type.equals("rook")) {
+            if ((startX == endX || startY == endY) && (clickedBox.piece == null || SourceColor != DestinationColor)) {
+
+                // Horizontal movement
+                if (startX == endX) {
+                    int step = (endY > startY) ? 1 : -1;
+                    for (int y = startY + step; y != endY; y += step) {
+                        if (x[startX][y].piece != null)
+                            return false;
+                    }
+                }
+
+                // Vertical movement
+                if (startY == endY) {
+                    int step = (endX > startX) ? 1 : -1;
+                    for (int xRow = startX + step; xRow != endX; xRow += step) {
+                        if (x[xRow][startY].piece != null)
+                            return false;
+                    }
+                }
+
+                return true;
             }
         }
 
-        // Vertical movement 
-        if (startY == endY) {
-            int step = (endX > startX) ? 1 : -1;
-            for (int xRow = startX + step; xRow != endX; xRow += step) {
-                if (x[xRow][startY].piece != null) return false; 
+        // king
+
+        if (type.equals("king")) {
+            if (startX + 1 == endX || startY + 1 == endY || startX - 1 == endX || startY - 1 == endY) {
+                if (clickedBox.piece == null || SourceColor != DestinationColor) {
+                    return true;
+                }
             }
         }
 
-        return true; 
-    }
-}
+        // knight
+        if (type.equals("knight")) {
+            if (startY + 2 == endY && (startX + 1 == endX || startX - 1 == endX)
+                    || startY - 2 == endY && (startX + 1 == endX || startX - 1 == endX)
+                    || startX + 2 == endX && (startY + 1 == endY || startY - 1 == endY)
+                    || startX - 2 == endX && (startY + 1 == endY || startY - 1 == endY)) {
+                if (clickedBox.piece == null || SourceColor != DestinationColor) {
+                    return true;
+                }
+            }
+        }
 
+        // bishop
+        if (type.equals("bishop")) {
+            if (Math.abs(endX - startX) == Math.abs(endY - startY)) {
+                int xStep = (endX > startX) ? 1 : -1;
+                int yStep = (endY > startY) ? 1 : -1;
+                int i = startX + xStep;
+                int j = startY + yStep;
+                while (i != endX && j != endY) {
+                    if (x[i][j].piece != null) {
+                        return false;
+                    }
+                    i += xStep;
+                    j += yStep;
+                }
+            }
+            if (clickedBox.piece == null || SourceColor != DestinationColor) {
+                return true;
+            }
+        }
 
-    
-    
+        // queen
+        if (type.equals("queen")) {
+            if ((startX == endX || startY == endY) || (Math.abs(endX - startX) == Math.abs(endY - startY))) {
 
+                // Horizontal movement
+                if (startX == endX) {
+                    int step = (endY > startY) ? 1 : -1;
+                    for (int y = startY + step; y != endY; y += step) {
+                        if (x[startX][y].piece != null)
+                            return false;
+                    }
+                }
+
+                // Vertical movement
+                else if (startY == endY) {
+                    int step = (endX > startX) ? 1 : -1;
+                    for (int xRow = startX + step; xRow != endX; xRow += step) {
+                        if (x[xRow][startY].piece != null)
+                            return false;
+                    }
+                    // Diagonal Movement
+                } else {
+                    int xStep = (endX > startX) ? 1 : -1;
+                    int yStep = (endY > startY) ? 1 : -1;
+                    int i = startX + xStep;
+                    int j = startY + yStep;
+                    while (i != endX && j != endY) {
+                        if (x[i][j].piece != null) {
+                            return false;
+                        }
+                        i += xStep;
+                        j += yStep;
+                    }
+                }
+
+                if (clickedBox.piece == null || SourceColor != DestinationColor) {
+                    return true;
+                }
+            }
+        }
         return false;
     }
 

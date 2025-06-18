@@ -1,19 +1,29 @@
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.ArrayList;
+import java.util.List;
 
-public class Board {
+import javax.swing.JPanel;
+
+public class Board extends JPanel{
+    
     box[][] x;
     box selectedBox = null;
     Ccolor last_move = null;
     Ccolor current_move = Ccolor.WHITE;
+    List<box> highlightedBoxes = new ArrayList<>();
+
     Board() {
+        setLayout(null); // Important for absolute positioning
+        setPreferredSize(new Dimension(8 * box.WIDTH, 8 * box.HEIGHT));
         x = new box[8][8];
 
         for (int i = 0; i < 8; i++) {
             for (int j = 0; j < 8; j++) {
                 x[i][j] = new box(j * box.WIDTH, i * box.HEIGHT);
-
+                x[i][j].setBounds(j * box.WIDTH, i * box.HEIGHT, box.WIDTH, box.HEIGHT);
                 if ((i + j) % 2 == 0) {
                     x[i][j].setBackground(new Color(240, 217, 181));
                 } else {
@@ -36,12 +46,12 @@ public class Board {
 
     private void handleClick(int i, int j) {
     box clickedBox = x[i][j];
-    box initialBox = x[i][j];
 
     if (selectedBox == null) {
         if (clickedBox.piece != null && clickedBox.piece.getColor() == current_move) {
             selectedBox = clickedBox;
             clickedBox.setBackground(Color.YELLOW); // highlight
+            showValidMoves(selectedBox);
         }
     } else {
         if (clickedBox != selectedBox) {
@@ -66,11 +76,35 @@ public class Board {
         int sy = selectedBox.getX() / box.WIDTH;
         Color original = ((sx + sy) % 2 == 0) ? new Color(240, 217, 181) : new Color(181, 136, 99);
         selectedBox.setBackground(original);
-
+        
+        for (int r = 0; r < 8; r++){
+            for (int c = 0; c < 8; c++){
+                x[r][c].showDot = false;
+                x[r][c].repaint();
+            }
+        }
         selectedBox = null;
     }
 }
 
+
+    private void showValidMoves(box selectedBox2) {
+        for(int i=0;i<8;i++){
+            for(int j=0;j<8;j++){
+                x[i][j].showDot=false;
+            }
+        }
+
+        for(int i=0;i<8;i++){
+            for(int j=0;j<8;j++){
+                box target=x[i][j];
+                if(target!=selectedBox2 && moveValid(target, selectedBox2)){
+                    x[i][j].showDot=true;
+                    x[i][j].repaint();
+                }
+            }
+        }
+    }
 
     // Move Logic
     private boolean moveValid(box clickedBox, box selectedBox2) {
@@ -140,7 +174,7 @@ public class Board {
         // king
 
         if (type.equals("king")) {
-            if ((startX + 1 == endX || startY + 1 == endY || startX - 1 == endX || startY - 1 == endY) && SourceColor==current_move) {
+            if (startX == endX && (startY+1==endY || startY-1==endY) || startX - 1 == endX && (startY+1==endY || startY==endY || startY-1==endY) || startX + 1 == endX && (startY+1==endY || startY==endY || startY-1==endY)) {
                 if (clickedBox.piece == null || SourceColor != DestinationColor) {
                     return true;
                 }

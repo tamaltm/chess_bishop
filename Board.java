@@ -11,14 +11,15 @@ public class Board extends JPanel {
 
     box[][] x;
     box selectedBox = null;
-    
+    box where_is_king = null;
     Ccolor last_move = null;
     Ccolor current_move = Ccolor.WHITE;
     List<box> ClickedBoxes = new ArrayList<>();
     boolean FirstMoveDone = false;
-    
+    boolean KingInCheck = false;
+
     Board() {
-        setLayout(null); // Important for absolute positioning
+        setLayout(null);
         setPreferredSize(new Dimension(8 * box.WIDTH, 8 * box.HEIGHT));
         x = new box[8][8];
 
@@ -46,11 +47,13 @@ public class Board extends JPanel {
         setupInitialPieces();
     }
 
-    private void handleClick(int i, int j) {
+  private void handleClick(int i, int j) {
         box clickedBox = x[i][j];
 
         if (selectedBox == null) {
-            if(FirstMoveDone){restoreOriginalColor();}
+            if (FirstMoveDone) {
+                restoreOriginalColor();
+            }
             if (clickedBox.piece != null && clickedBox.piece.getColor() == current_move) {
                 selectedBox = clickedBox;
                 clickedBox.setBackground(new Color(255, 215, 0)); // highlight
@@ -64,28 +67,60 @@ public class Board extends JPanel {
                     FirstMoveDone = true;
                     ClickedBoxes.add(selectedBox);
                     ClickedBoxes.add(clickedBox);
-                    
+                    InCheck(Ccolor.BLACK);
+                    InCheck(Ccolor.WHITE);
                     clickedBox.setBackground(new Color(255, 215, 0));
                     selectedBox.setBackground(new Color(218, 165, 32));
                     selectedBox.setPiece(null);
-
-                    if (current_move == Ccolor.WHITE) {
-                        current_move = Ccolor.BLACK;
-                    } else {
-                        current_move = Ccolor.WHITE;
-                    }
+                    current_move = (current_move==Ccolor.WHITE?Ccolor.BLACK:Ccolor.WHITE);
+                    
                 } else {
                     System.out.println("Invalid Move!!");
                     ClickedBoxes.add(clickedBox);
                     restoreOriginalColor();
                 }
-            }else{
+            } else {
                 ClickedBoxes.add(clickedBox);
                 restoreOriginalColor();
             }
             removeHighlightedMoves();
             selectedBox = null;
         }
+    }
+
+
+
+    private void InCheck(Ccolor colorTocheck) {
+        
+        for (int r = 0; r < 8; r++) {
+        for (int c = 0; c < 8; c++) {
+            x[r][c].check = false;
+            x[r][c].repaint();
+        }
+    }
+        int kingX = -1, kingY = -1;
+        for (int r = 0; r < 8; r++) {
+            for (int c = 0; c < 8; c++) {
+                if (x[r][c].piece != null && x[r][c].piece.getType().equals("king")
+                        && x[r][c].piece.color == colorTocheck) {
+                    kingX = r;
+                    kingY = c;
+                    break;
+                }
+            }
+        }
+        where_is_king = x[kingX][kingY];
+        for (int r = 0; r < 8; r++) {
+            for (int c = 0; c < 8; c++) {
+                if (x[r][c].piece != null && x[r][c].piece.getColor() != colorTocheck) {
+                    if (moveValid(x[kingX][kingY], x[r][c])) {
+                        x[kingX][kingY].check = true;
+                        return;
+                    }
+                }
+            }
+        }
+        return;
     }
 
     private void removeHighlightedMoves() {
@@ -99,8 +134,7 @@ public class Board extends JPanel {
     }
 
     private void restoreOriginalColor() {
-        // Restore original background
-        for(box p:ClickedBoxes){
+        for (box p : ClickedBoxes) {
             int sx = p.getY() / box.HEIGHT;
             int sy = p.getX() / box.WIDTH;
             Color original = ((sx + sy) % 2 == 0) ? new Color(240, 217, 181) : new Color(181, 136, 99);

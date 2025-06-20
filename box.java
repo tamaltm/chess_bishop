@@ -8,6 +8,7 @@ public class box extends JPanel {
     public boolean showDot = false;
     Materials piece;
     public boolean warning = false;
+    public boolean check = false;
     box(int x, int y) {
         setBounds(x, y, WIDTH, HEIGHT); 
     }
@@ -33,7 +34,12 @@ public class box extends JPanel {
         g2.setStroke(new BasicStroke(6)); 
         g2.drawOval(0, 0, 90, 90);
         }
-
+        if(check){
+            Graphics2D g2 = (Graphics2D) g; 
+            g2.setColor(Color.RED);
+            g2.setStroke(new BasicStroke(7)); 
+            g2.drawRect(0, 0, WIDTH, HEIGHT);
+        }
         if (piece != null && piece.getImage() != null) {
             g.drawImage(piece.getImage(), 0, 0, WIDTH, HEIGHT, this);
         }

@@ -11,7 +11,7 @@ public class Board extends JPanel {
 
     box[][] x;
     box selectedBox = null;
-    box where_is_king = null;
+    box BlackKing, WhiteKing;
     Ccolor last_move = null;
     Ccolor current_move = Ccolor.WHITE;
     List<box> ClickedBoxes = new ArrayList<>();
@@ -45,9 +45,11 @@ public class Board extends JPanel {
             }
         }
         setupInitialPieces();
+        BlackKing = x[0][4];
+        WhiteKing = x[7][4];
     }
 
-  private void handleClick(int i, int j) {
+    private void handleClick(int i, int j) {
         box clickedBox = x[i][j];
 
         if (selectedBox == null) {
@@ -64,16 +66,29 @@ public class Board extends JPanel {
             if (clickedBox != selectedBox) {
                 if (moveValid(clickedBox, selectedBox)) {
                     clickedBox.setPiece(selectedBox.piece);
+                    if (InCheck(BlackKing.piece.color)) {
+                        BlackKing.check = true;
+                        repaint();
+                    } else {
+                        BlackKing.check = false;
+                        repaint();
+                    }
+                    if (InCheck(WhiteKing.piece.color)) {
+                        WhiteKing.check = true;
+                        repaint();
+                    } else {
+                        WhiteKing.check = false;
+                        repaint();
+                    }
                     FirstMoveDone = true;
                     ClickedBoxes.add(selectedBox);
                     ClickedBoxes.add(clickedBox);
-                    InCheck(Ccolor.BLACK);
-                    InCheck(Ccolor.WHITE);
                     clickedBox.setBackground(new Color(255, 215, 0));
                     selectedBox.setBackground(new Color(218, 165, 32));
                     selectedBox.setPiece(null);
-                    current_move = (current_move==Ccolor.WHITE?Ccolor.BLACK:Ccolor.WHITE);
+                    current_move = (current_move == Ccolor.WHITE ? Ccolor.BLACK : Ccolor.WHITE);
                     
+
                 } else {
                     System.out.println("Invalid Move!!");
                     ClickedBoxes.add(clickedBox);
@@ -88,39 +103,22 @@ public class Board extends JPanel {
         }
     }
 
+    private boolean InCheck(Ccolor colorTocheck) {
 
-
-    private void InCheck(Ccolor colorTocheck) {
-        
-        for (int r = 0; r < 8; r++) {
-        for (int c = 0; c < 8; c++) {
-            x[r][c].check = false;
-            x[r][c].repaint();
-        }
-    }
-        int kingX = -1, kingY = -1;
-        for (int r = 0; r < 8; r++) {
-            for (int c = 0; c < 8; c++) {
-                if (x[r][c].piece != null && x[r][c].piece.getType().equals("king")
-                        && x[r][c].piece.color == colorTocheck) {
-                    kingX = r;
-                    kingY = c;
-                    break;
-                }
-            }
-        }
-        where_is_king = x[kingX][kingY];
+        box Kinggg = (colorTocheck == Ccolor.BLACK ? BlackKing : WhiteKing);
         for (int r = 0; r < 8; r++) {
             for (int c = 0; c < 8; c++) {
                 if (x[r][c].piece != null && x[r][c].piece.getColor() != colorTocheck) {
-                    if (moveValid(x[kingX][kingY], x[r][c])) {
-                        x[kingX][kingY].check = true;
-                        return;
+
+                    if (moveValid(Kinggg, x[r][c])) {
+                        System.out.println("Check!");
+                        return true;
                     }
                 }
             }
         }
-        return;
+
+        return false;
     }
 
     private void removeHighlightedMoves() {
@@ -240,6 +238,11 @@ public class Board extends JPanel {
                     || startX - 1 == endX && (startY + 1 == endY || startY == endY || startY - 1 == endY)
                     || startX + 1 == endX && (startY + 1 == endY || startY == endY || startY - 1 == endY)) {
                 if (clickedBox.piece == null || SourceColor != DestinationColor) {
+                    if (SourceColor == Ccolor.BLACK) {
+                        BlackKing = x[endX][endY];
+                    } else {
+                        WhiteKing = x[endX][endY];
+                    }
                     return true;
                 }
             }
